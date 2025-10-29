@@ -1,200 +1,253 @@
-import { useState } from "react";
-import { RxCross1 } from "react-icons/rx";
+import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  addElement,
+  updateElement,
+  deleteElement,
+  setElements
+} from "../slices/formslice";
 import FormPreview from "./formPreview";
 import RightSideBar from "./rightsidebar";
-const Canvas = () => {
-  const [elements, setElements] = useState([]);
-  const [rightSidebar, setRightSidebar]= useState(false);
-  const [elementID, setElementId]= useState(0);
-   const [displayDelete,setDisplayDelete]=useState(true);
-  const handleDragOver = (e) => {
+import { RxCross1 } from "react-icons/rx";
+
+export default function Canvas() {
+  const dispatch = useDispatch();
+  const elements = useSelector(state => state.form.elements);
+  const [selectedId, setSelectedId] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("formBuilderData");
+    if (saved) dispatch(setElements(JSON.parse(saved)));
+  }, [dispatch]);
+
+  useEffect(() => {
+    localStorage.setItem("formBuilderData", JSON.stringify(elements));
+  }, [elements]);
+
+  const handleDragOver = e => e.preventDefault();
+
+  const handleDrop = e => {
     e.preventDefault();
-  };
+    const dropped = JSON.parse(e.dataTransfer.getData("application/json"));
 
-  const togglSideBar=(id)=>{
-    setRightSidebar(!rightSidebar);
-    setElementId(id)
-  }
-  
-  const handleChange=(e,id)=>{
-    const newValue= e.target.value;
-  setElements(element=>
-      element.map((ele)=>{
-        if(ele.id==id){
-          return {...ele,value:newValue}
-        }
-        return ele;
-      })
-       )
-
-  }
-console.log(elements);
- 
-   const updateChange = (updatedItem) => {
-  setElements((prev) =>
-    prev.map((el) => (el.id === updatedItem.id ? updatedItem : el))
-  );
-};
-
-  
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const { type, label,value ,options,isRequired} = JSON.parse(e.dataTransfer.getData("text/plain"));
-    const rect = e.currentTarget.getBoundingClientRect();
-    console.log(Array.isArray(options));
     const newElement = {
       id: Date.now(),
-      type,
-      label,
-      options,
-      value,
-      isRequired,
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      type: dropped.type,
+      style:dropped.style||{},
+      label: dropped.fieldLabel || dropped.label,
+      placeholder: dropped.placeholder || "",
+      options: dropped.options || [],
+      value: dropped.value || "",
+      isRequired: dropped.isRequired || false
     };
-    setElements((prev) => [...prev, newElement]);
+
+    dispatch(addElement(newElement));
   };
-   const handleDelete= (id)=>{
-   
-    setElements(ele=>
-       ele.filter((ele)=>ele.id!==id)
 
-    
-    )
-   }
-  const renderElement = (el) => {
-    
+  const handleDelete = id => dispatch(deleteElement(id));
 
+  const handleSelectElement = id => {
+    setSelectedId(id);
+    setShowSidebar(true);
+  };
+
+  const updateElementHandler = updatedItem => dispatch(updateElement(updatedItem));
+
+  const renderElement = el => {
     switch (el.type) {
       case "text":
         return (
-          <div key={el.id} className="flex flex-col gap-1 relative">
-           <button className="absolute block left-64 text-sm text-red-500" onClick={()=>handleDelete(el.id)}> <RxCross1/></button>
-            
-            <label htmlFor={el.type} className="text-gray-700 text-sm font-medium">
+          <div key={el.id} className="relative mb-4">
+            <button
+              className={el.style?.button}
+              onClick={() => handleDelete(el.id)}
+            >
+              <RxCross1 />
+            </button>
+            <label className={el.style?.label}>
               {el.label}
+              {el.isRequired && <span className="text-red-500 ml-1">*</span>}
             </label>
             <input
               type="text"
-              name={el.type}
-              className="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              onChange={(e)=>handleChange(e,el.id)}
-              onClick={()=>togglSideBar(el.id)}
+              placeholder={el.placeholder}
+              className={el.style?.input}
+              value={el.value}
+              onChange={(e) => handleValueChange(el.id, e.target.value)}
+              onClick={() => handleSelectElement(el.id)}
             />
           </div>
         );
 
       case "textarea":
         return (
-          <div key={el.id}  className="flex flex-col relative gap-1 object-cover">
-             <button className="absolute block left-64 text-sm text-red-500" onClick={()=>handleDelete(el.id)}> <RxCross1/></button>
-            <label htmlFor={el.type} className="text-gray-700 text-sm font-medium">
+          <div key={el.id} className="relative mb-4">
+            <button
+              className={el.style?.button}
+              onClick={() => handleDelete(el.id)}
+            >
+              <RxCross1 />
+            </button>
+            <label className={el.style?.label}>
               {el.label}
             </label>
             <textarea
-              name={el.type}
-              rows="4"
-              className="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              onChange={(e)=>handleChange(e,el.id)}
-              onClick={()=>togglSideBar(el.id)}
+              placeholder={el.placeholder}
+              rows="3"
+              className={el.style.input}
+              value={el.value}
+              onChange={(e) => handleValueChange(el.id, e.target.value)}
+              onClick={() => handleSelectElement(el.id)}
             />
           </div>
         );
 
       case "dropdown":
         return (
-             <div key={el.id}  className="flex flex-col relative gap-1 object-cover">
-               <button className="absolute block left-64 text-sm text-red-500" onClick={()=>handleDelete(el.id)}> <RxCross1/></button>
-            <label htmlFor={el.type} className="text-gray-700 text-sm font-medium">
+          <div key={el.id} className="relative mb-4">
+            <button
+              className={el.style.button}
+              onClick={() => handleDelete(el.id)}
+            >
+              <RxCross1 />
+            </button>
+            <label className={el.style.label}>
               {el.label}
             </label>
-          <select
-            key={el.id}
-            className="font-medium  text-gray-800 border border-gray-300 rounded-md px-3 py-2 shadow-sm "
-            name={el.label}
-             onChange={(e)=>handleChange(e,el.id)}
-              onClick={()=>togglSideBar(el.id)}
-          >
-    
-           {el.options.map((option)=>(
-        
-            <option value={option} className="focus:ring-2 focus:ring-blue-400 focus:outline-none">{option}</option>
-           ))}
-          </select>
+            <select
+              className={el.style.input}
+              value={el.value}
+              onChange={(e) => handleValueChange(el.id, e.target.value)}
+              onClick={() => handleSelectElement(el.id)}
+            >
+              <option value="">Select an option</option>
+              {el.options.map((opt, i) => (
+                <option key={i} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
           </div>
         );
-       case "radio":
+
+     case "radio":
+  return (
+    <div key={el.id} className="relative mb-4">
+      <button
+        className={el.style.button}
+        onClick={() => handleDelete(el.id)}
+      >
+        <RxCross1 />
+      </button>
+      <label className={el.style.label}>
+        {el.label}
+      </label>
+
+      <div className="flex flex-row gap-2">
+        {el.options.map((opt, i) => (
+          <label key={i} className={el.style?.option_label}>
+            <input
+              type="radio"
+              name={`radio-${el.id}`}
+              value={opt}
+              checked={el.value === opt}
+              onClick={() => handleSelectElement(el.id)}
+              onChange={(e) => handleValueChange(el.id, e.target.value)}
+              className={el.style.input}
+            />
+            <span className={el.style?.span}>{opt}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+
+      case "checkbox":
         return (
-          // <div key={el.id} className="flex flex-row gap-1 object-cover">
-          <>
-           <button className="absolute block left-20 text-sm text-red-500" onClick={()=>handleDelete(el.id)}> <RxCross1/></button>
-            <label htmlFor={el.type} className="text-gray-700 text-sm font-medium">
+          <div key={el.id} className="relative mb-4">
+            <button
+              className={el.style?.button}
+              onClick={() => handleDelete(el.id)}
+            >
+              <RxCross1 />
+            </button>
+            <label className={el.style?.label}>
               {el.label}
             </label>
-            <input
-              type={el.type}
-              name={el.type}
-              className="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-               onChange={(e)=>handleChange(e,el.id)}
-              onClick={()=>togglSideBar(el.id)}
-            />
-            </>
-          // </div>
-        );
-         case "checkbox":
-        return (
-          <div key={el.id} className="flex flex-row gap-1 m-4 object-cover">
-            <label htmlFor={el.type} className="text-gray-700 text-sm font-medium m-5">
-              {el.label}
-            </label>
-            <input
-              type={el.type}
-              name={el.type}
-              className="border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-               onChange={(e)=>handleChange(e,el.id)}
-              onClick={()=>togglSideBar(el.id)}
-            />
+            {el.options.map((opt, i) => (
+              <label key={i} className={el.style?.option_label}>
+                <input
+                  type="checkbox"
+                  value={opt}
+                  checked={Array.isArray(el.value) && el.value.includes(opt)}
+                  onChange={(e) => {
+                    const newVals = Array.isArray(el.value)
+                      ? el.value.includes(opt)
+                        ? el.value.filter((v) => v !== opt)
+                        : [...el.value, opt]
+                      : [opt];
+                    handleValueChange(el.id, newVals);
+                  }}
+                  onClick={() => handleSelectElement(el.id)}
+                />
+                <span className={el.style?.span}>{opt}</span>
+              </label>
+            ))}
           </div>
         );
-        case "navbar":
-         return (
-        <nav className="flex justify-between w-98 bg-gray-400">
-          <p>{el.value}</p>
-          <div className="flex gap-3 sticky">
-            {el.options?.map((opt, i) => <a href="#" key={i}>{opt}</a>)}
+     case "button":
+      return(
+       <div className="flex justify-center mt-6 relative">
+        <button
+              className={el.style?.button}
+              onClick={() => handleDelete(el.id)}
+            >
+              <RxCross1 />
+            </button>
+              <button
+                type="submit"
+                onClick={() => handleSelectElement(el.id)}
+                className={el.style?.submit_button}
+              >
+                Submit
+              </button>
             </div>
-        </nav>
-      );
         
+      )
       default:
         return null;
     }
   };
 
   return (
-    <div className="flex max-w-full overflow-hidden">
-    <div
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      className="relative object-contain flex mt-10  mr-10 w-300 md:max-w-100 max-h-full ml-10 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg shadow-inner "
-    >
-      <div className="absolute  max-w-100 ">{elements.map(renderElement)}</div>
-      {elements.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center text-gray-400 italic overflow-hidden m-10">
-          
-        </div>
-        
-      )}
-     
-      
-    </div>
-     <div className="relative object-contain flex mt-10 items-center justify-center mr-10 w-200 md:max-w-100 max-h-full ml-10 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg shadow-inner ">
-        <FormPreview elements={elements} />
-      </div  >
-      {rightSidebar&&<RightSideBar elements={elements} elementID={elementID} handleUpdate={updateChange}/>}
+    <div className="flex w-full gap-6 p-6">
+      <div
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className="flex-1 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6 min-h-[80vh] overflow-y-auto shadow-inner"
+      >
+        {elements.length === 0 ? (
+          <div className="text-gray-400 text-center italic mt-20">
+            Drag and drop elements from the Toolbox
+          </div>
+        ) : (
+          elements.map(renderElement)
+        )}
       </div>
 
-  );
-};
+      <div className="w-1/3 bg-gray-100 rounded-lg border border-gray-300 p-4">
+        <FormPreview />
+      </div>
 
-export default Canvas;
+      {showSidebar && selectedId && (
+        <RightSideBar
+          elements={elements}
+          elementID={selectedId}
+          handleUpdate={updateElementHandler}
+          onClose={() => setShowSidebar(false)}
+        />
+      )}
+    </div>
+  );
+}
