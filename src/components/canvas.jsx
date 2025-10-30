@@ -46,6 +46,14 @@ export default function Canvas() {
   };
 
   const handleDelete = id => dispatch(deleteElement(id));
+const handleValueChange = (id, value) => {
+  const updatedElements = elements.map(el =>
+    el.id === id ? { ...el, value } : el
+  );
+
+  dispatch(setElements(updatedElements));
+};
+
 
   const handleSelectElement = id => {
     setSelectedId(id);
@@ -71,6 +79,7 @@ export default function Canvas() {
             </label>
             <input
               type="text"
+              name={el.label}
               placeholder={el.placeholder}
               className={el.style?.input}
               value={el.value}
@@ -91,9 +100,11 @@ export default function Canvas() {
             </button>
             <label className={el.style?.label}>
               {el.label}
+               {el.isRequired && <span className="text-red-500 ml-1">*</span>}
             </label>
             <textarea
               placeholder={el.placeholder}
+              name={el.label}
               rows="3"
               className={el.style.input}
               value={el.value}
@@ -114,9 +125,11 @@ export default function Canvas() {
             </button>
             <label className={el.style.label}>
               {el.label}
+               {el.isRequired && <span className="text-red-500 ml-1">*</span>}
             </label>
             <select
               className={el.style.input}
+              name={el.label}
               value={el.value}
               onChange={(e) => handleValueChange(el.id, e.target.value)}
               onClick={() => handleSelectElement(el.id)}
@@ -142,6 +155,7 @@ export default function Canvas() {
       </button>
       <label className={el.style.label}>
         {el.label}
+         {el.isRequired && <span className="text-red-500 ml-1">*</span>}
       </label>
 
       <div className="flex flex-row gap-2">
@@ -174,11 +188,13 @@ export default function Canvas() {
             </button>
             <label className={el.style?.label}>
               {el.label}
+               {el.isRequired && <span className="text-red-500 ml-1">*</span>}
             </label>
             {el.options.map((opt, i) => (
               <label key={i} className={el.style?.option_label}>
                 <input
                   type="checkbox"
+                  name={el.label}
                   value={opt}
                   checked={Array.isArray(el.value) && el.value.includes(opt)}
                   onChange={(e) => {

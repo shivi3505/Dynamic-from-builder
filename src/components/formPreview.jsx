@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useSelector,useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { setFormData } from "../slices/formslice";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 export default function FormPreview() {
-  
- 
+
+
   const elements = useSelector((state) => state.form.elements);
   const formData = useSelector((state) => state.form.formData);
   const dispatch = useDispatch();
@@ -14,7 +14,7 @@ export default function FormPreview() {
     dispatch(setFormData({ [id]: value }));
   };
 
- 
+
 
   const renderElement = (el) => {
     switch (el.type) {
@@ -82,7 +82,8 @@ export default function FormPreview() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {el.label}
             </label>
-            {el.options?.map((option, i) => (
+            <div className="flex flex-row gap-2">
+                {el.options?.map((option, i) => (
               <label key={i} className="flex items-center mb-1">
                 <input
                   type="radio"
@@ -95,6 +96,8 @@ export default function FormPreview() {
                 <span className="text-gray-700 text-sm">{option}</span>
               </label>
             ))}
+            </div>
+           
           </div>
         );
 
@@ -130,20 +133,20 @@ export default function FormPreview() {
             ))}
           </div>
         );
-        case "button":
-              return(
-               <div className="flex justify-center mt-6 relative">
-                
-                      <button
-                        type="submit"
-                        onClick={() => handleSelectElement(el.id)}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all"
-                      >
-                        Submit
-                      </button>
-                    </div>
-                
-              )
+      case "button":
+        return (
+          <div className="flex justify-center mt-6 relative">
+
+            <button
+              type="submit"
+              onClick={() => handleSelectElement(el.id)}
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all"
+            >
+              Submit
+            </button>
+          </div>
+
+        )
       default:
         return null;
     }
@@ -158,36 +161,31 @@ export default function FormPreview() {
               <label class="${el.style.label}">
                 ${el.label}${el.isRequired ? '<span class="text-red-500 ml-1">*</span>' : ''}
               </label>
-              <input type="text" placeholder="${el.placeholder || ""}" value="${
-              formData[el.id] || ""
-            }" class="${el.style.input}" ${
-              el.isRequired ? "required" : ""
-            } />
+              <input type="text" placeholder="${el.placeholder || ""}" value="${formData[el.id] || ""
+              }" class="${el.style.input}" ${el.isRequired ? "required" : ""
+              } />
             </div>`;
           case "textarea":
             return `<div class="mb-5">
               <label class="${el.style.label}">
                 ${el.label}${el.isRequired ? '<span class="text-red-500 ml-1">*</span>' : ''}
               </label>
-              <textarea rows="4" placeholder="${el.placeholder || ""}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none" ${
-              el.isRequired ? "required" : ""
-            }>${formData[el.id] || ""}</textarea>
+              <textarea rows="4" placeholder="${el.placeholder || ""}" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none" ${el.isRequired ? "required" : ""
+              }>${formData[el.id] || ""}</textarea>
             </div>`;
           case "dropdown":
             return `<div class="mb-5">
-              <label class="${el.style.label}>${el.label}</label>
-              <select class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none" ${
-              el.isRequired ? "required" : ""
-            }>
+              <label class="${el.style.label}">${el.label}</label>
+              <select class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none" ${el.isRequired ? "required" : ""
+              }>
                 <option value="">Select an option</option>
                 ${el.options
-                  ?.map(
-                    (opt) =>
-                      `<option value="${opt}" ${
-                        formData[el.id] === opt ? "selected" : ""
-                      }>${opt}</option>`
-                  )
-                  .join("")}
+                ?.map(
+                  (opt) =>
+                    `<option value="${opt}" ${formData[el.id] === opt ? "selected" : ""
+                    }>${opt}</option>`
+                )
+                .join("")}
               </select>
             </div>`;
           case "radio":
@@ -196,8 +194,7 @@ export default function FormPreview() {
               ${el.options
                 ?.map(
                   (opt) =>
-                    `<label class="flex items-center mb-1"><input type="radio" name="radio-${el.id}" value="${opt}" ${
-                      formData[el.id] === opt ? "checked" : ""
+                    `<label class="flex items-center mb-1"><input type="radio" name="radio-${el.id}" value="${opt}" ${formData[el.id] === opt ? "checked" : ""
                     } class="mr-2 text-blue-500 focus:ring-blue-400"/><span class="text-gray-700 text-sm">${opt}</span></label>`
                 )
                 .join("")}
@@ -208,28 +205,25 @@ export default function FormPreview() {
               ${el.options
                 ?.map(
                   (opt) =>
-                    `<label class="flex items-center mb-1"><input type="checkbox" value="${opt}" ${
-                      Array.isArray(formData[el.id]) &&
+                    `<label class="flex items-center mb-1"><input type="checkbox" value="${opt}" ${Array.isArray(formData[el.id]) &&
                       formData[el.id].includes(opt)
-                        ? "checked"
-                        : ""
+                      ? "checked"
+                      : ""
                     } class="mr-2 text-blue-500 focus:ring-blue-400"/><span class="text-gray-700 text-sm">${opt}</span></label>`
                 )
                 .join("")}
             </div>`
-             case "button":
-                  return
-                   `<div class="flex justify-center mt-6 relative">
-                    
-                          <button
-                            type="submit"
-                            class="${el.style?.submit_button}"
-                          >
-                            Submit
-                          </button>
-                        </div>`;
-                    
-                  
+          case "button":
+            return `<div class="flex justify-center mt-6 relative">
+    <button
+      type="submit"
+      class="${el.style?.submit_button}"
+    >
+      Submit
+    </button>
+  </div>`;
+
+
           default:
             return "";
         }
@@ -278,18 +272,18 @@ export default function FormPreview() {
     return html;
   };
 
- 
+
   const handleExport = async () => {
     const zip = new JSZip();
     zip.file("index.html", generateHTML());
-    
+
     const content = await zip.generateAsync({ type: "blob" });
     saveAs(content, `exported${Date.now()}-form.zip`);
   };
 
   return (
     <>
-     <div className="flex justify-end ">
+      <div className="flex justify-end ">
         <button
           onClick={handleExport}
           className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-all m-4"
@@ -297,14 +291,14 @@ export default function FormPreview() {
           Export Form
         </button>
       </div>
-     <div className="w-full">
-      
-     
+      <div className="w-full">
 
-     
-     
+
+
+
+
         <h2 className="text-xl font-semibold text-center text-gray-700 mb-6">
-          Form 
+          Form
         </h2>
 
         {elements.length === 0 ? (
@@ -315,13 +309,13 @@ export default function FormPreview() {
           <form >
             {elements.map(renderElement)}
 
-            
+
           </form>
         )}
-     
 
-    </div>
+
+      </div>
     </>
-   
+
   );
 }
